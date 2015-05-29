@@ -30,8 +30,8 @@ import (
 	"github.com/prometheus/prometheus/notification"
 	"github.com/prometheus/prometheus/promql"
 	"github.com/prometheus/prometheus/storage"
-	"github.com/prometheus/prometheus/templates"
-	"github.com/prometheus/prometheus/utility"
+	"github.com/prometheus/prometheus/template"
+	"github.com/prometheus/prometheus/util/strutil"
 )
 
 // Constants for instrumentation.
@@ -195,8 +195,8 @@ func (m *Manager) queueAlertNotifications(rule *AlertingRule, timestamp clientmo
 		defs := "{{$labels := .Labels}}{{$value := .Value}}"
 
 		expand := func(text string) string {
-			template := templates.NewTemplateExpander(defs+text, "__alert_"+rule.Name(), tmplData, timestamp, m.queryEngine, m.pathPrefix)
-			result, err := template.Expand()
+			tmpl := template.NewTemplateExpander(defs+text, "__alert_"+rule.Name(), tmplData, timestamp, m.queryEngine, m.pathPrefix)
+			result, err := tmpl.Expand()
 			if err != nil {
 				result = err.Error()
 				log.Warnf("Error expanding alert template %v with data '%v': %v", rule.Name(), tmplData, err)
@@ -213,7 +213,7 @@ func (m *Manager) queueAlertNotifications(rule *AlertingRule, timestamp clientmo
 			Value:        aa.Value,
 			ActiveSince:  aa.ActiveSince.Time(),
 			RuleString:   rule.String(),
-			GeneratorURL: m.prometheusURL + strings.TrimLeft(utility.GraphLinkForExpression(rule.Vector.String()), "/"),
+			GeneratorURL: m.prometheusURL + strings.TrimLeft(strutil.GraphLinkForExpression(rule.Vector.String()), "/"),
 		})
 	}
 	m.notificationHandler.SubmitReqs(notifications)
